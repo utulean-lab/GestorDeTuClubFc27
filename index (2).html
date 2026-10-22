@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FC 27 - Modo Carrera Leyenda Liga Uruguaya</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              cyan: '#00f2fe',
+              neon: '#39ff14',
+              gold: '#ffb703',
+              dark: '#070a12',
+              card: '#0f172a',
+              cardHover: '#1e293b',
+              border: '#1e293b',
+              accent: '#38bdf8'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbars and Glowing UI Tokens */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    @keyframes cyanGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(0, 242, 254, 0.25); }
+      50% { box-shadow: 0 0 25px rgba(0, 242, 254, 0.5); }
+    }
+    .glow-cyan { animation: cyanGlow 3s infinite; }
+  </style>
+</head>
+<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col selection:bg-brand-cyan selection:text-slate-950 overflow-x-hidden">
+
+  <!-- APP HEADER / TOP BAR -->
+  <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-40 px-4 py-2.5 flex items-center justify-between shadow-lg">
+    <div class="flex items-center space-x-3">
+      <div class="bg-gradient-to-r from-blue-600 via-cyan-400 to-emerald-400 p-2 rounded-xl text-slate-950 font-black tracking-tighter text-lg flex items-center gap-1 shadow-md">
+        <i class="fa-solid fa-futbol"></i> EA FC 27
+      </div>
+      <div>
+        <h1 class="font-extrabold text-sm sm:text-base leading-tight tracking-wide flex items-center gap-2">
+          <span id="hdr-player-name">Cargando Jugador...</span>
+          <span class="text-[10px] font-extrabold bg-brand-cyan/20 text-brand-cyan px-2 py-0.5 rounded-full border border-brand-cyan/30 uppercase" id="hdr-player-pos">DC</span>
+        </h1>
+        <p class="text-xs text-slate-400 flex items-center gap-2">
+          <span id="hdr-club-name" class="text-brand-cyan font-semibold">Peñarol</span> • 
+          <span id="hdr-season">Temp. 2026</span> • 
+          <span id="hdr-date" class="text-slate-300">Fecha 1 - Apertura</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Stats summary pill -->
+    <div class="hidden lg:flex items-center space-x-6 bg-slate-950/80 px-4 py-1.5 rounded-full border border-slate-800 text-xs">
+      <div><span class="text-slate-400">Goles:</span> <strong id="hdr-goals" class="text-brand-neon font-bold">0</strong></div>
+      <div><span class="text-slate-400">Asist:</span> <strong id="hdr-assists" class="text-brand-cyan font-bold">0</strong></div>
+      <div><span class="text-slate-400">OVR:</span> <strong id="hdr-ovr" class="text-brand-gold text-sm font-black">72</strong></div>
+      <div><span class="text-slate-400">Valor:</span> <strong id="hdr-value" class="text-emerald-400 font-bold">$1.2M</strong></div>
+      <div><span class="text-slate-400">Presupuesto Club:</span> <strong id="hdr-budget" class="text-slate-200 font-bold">$3.5M</strong></div>
+    </div>
+
+    <!-- Controls -->
+    <div class="flex items-center space-x-2">
+      <button onclick="resetCareerConfirm()" class="p-2 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 rounded-xl text-xs transition" title="Reiniciar Carrera">
+        <i class="fa-solid fa-arrow-rotate-left mr-1"></i> Reiniciar
+      </button>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="bg-slate-900 border-b border-slate-800 px-4 py-1.5 flex space-x-2 sm:space-x-4 overflow-x-auto no-scrollbar text-xs sm:text-sm">
+    <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="tab-btn px-4 py-2 font-bold rounded-xl transition text-brand-cyan bg-slate-800 border border-brand-cyan/30 flex items-center gap-2 whitespace-nowrap">
+      <i class="fa-solid fa-gauge-high"></i> Dashboard Carrera
+    </button>
+    <button onclick="switchTab('match')" id="tab-btn-match" class="tab-btn px-4 py-2 font-bold rounded-xl transition text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+      <i class="fa-solid fa-gamepad"></i> Jugar Partido
+    </button>
+    <button onclick="switchTab('table')" id="tab-btn-table" class="tab-btn px-4 py-2 font-bold rounded-xl transition text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+      <i class="fa-solid fa-trophy"></i> Liga Uruguaya
+    </button>
+    <button onclick="switchTab('skills')" id="tab-btn-skills" class="tab-btn px-4 py-2 font-bold rounded-xl transition text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+      <i class="fa-solid fa-bolt"></i> Árbol de Habilidades
+    </button>
+    <button onclick="switchTab('transfers')" id="tab-btn-transfers" class="tab-btn px-4 py-2 font-bold rounded-xl transition text-slate-400 hover:text-slate-200 flex items-center gap-2 whitespace-nowrap">
+      <i class="fa-solid fa-handshake"></i> Mercado de Fichajes
+    </button>
+  </nav>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 p-3 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
+
+    <!-- TAB 1: DASHBOARD -->
+    <div id="tab-dashboard" class="tab-content space-y-6">
+      
+      <!-- TOP HERO GRID -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        <!-- PRO PLAYER CARD -->
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 relative overflow-hidden shadow-xl flex flex-col justify-between glow-cyan">
+          <div class="absolute -right-6 -bottom-6 opacity-10 text-9xl font-black text-brand-cyan">27</div>
+          
+          <div class="flex justify-between items-start z-10">
+            <div>
+              <span class="text-[10px] uppercase tracking-widest text-brand-cyan font-bold">Carta FC 27 Pro</span>
+              <h2 id="dash-player-name" class="text-2xl font-black tracking-tight mt-0.5">Nombre Jugador</h2>
+              <p id="dash-player-club" class="text-xs text-slate-400 font-semibold">Club Actual</p>
+            </div>
+            <div class="text-right">
+              <div id="dash-player-ovr" class="text-4xl font-black text-brand-gold drop-shadow">72</div>
+              <div id="dash-player-pos" class="text-xs font-bold text-slate-300">DC</div>
+            </div>
+          </div>
+
+          <!-- Attributes Hex / Matrix Grid -->
+          <div class="grid grid-cols-3 gap-2 my-4 text-center text-xs z-10">
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+              <div class="text-slate-400 text-[10px] font-bold">RITMO</div>
+              <div id="stat-pac" class="font-black text-slate-100 text-sm">75</div>
+            </div>
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+              <div class="text-slate-400 text-[10px] font-bold">TIRO</div>
+              <div id="stat-sho" class="font-black text-slate-100 text-sm">70</div>
+            </div>
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+              <div class="text-slate-400 text-[10px] font-bold">PASE</div>
+              <div id="stat-pas" class="font-black text-slate-100 text-sm">68</div>
+            </div>
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+              <div class="text-slate-400 text-[10px] font-bold">REGATE</div>
+              <div id="stat-dri" class="font-black text-slate-100 text-sm">74</div>
+            </div>
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+              <div class="text-slate-400 text-[10px] font-bold">DEFENSA</div>
+              <div id="stat-def" class="font-black text-slate-100 text-sm">45</div>
+            </div>
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+              <div class="text-slate-400 text-[10px] font-bold">FÍSICO</div>
+              <div id="stat-phy" class="font-black text-slate-100 text-sm">72</div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between text-xs z-10 border-t border-slate-800 pt-3">
+            <span class="text-slate-400">Puntos de Habilidad libres:</span>
+            <span id="dash-skill-points" class="font-bold text-brand-neon bg-brand-neon/10 px-2.5 py-1 rounded-full border border-brand-neon/30">3 SP</span>
+          </div>
+        </div>
+
+        <!-- NEXT MATCH MATCHUP -->
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5">
+                <i class="fa-regular fa-calendar-check text-brand-cyan"></i> Próximo Encuentro
+              </span>
+              <span id="dash-match-tournament" class="text-xs bg-slate-800 text-brand-gold font-bold px-2.5 py-0.5 rounded-full border border-brand-gold/30">Apertura - Fecha 1</span>
+            </div>
+
+            <div class="flex items-center justify-around py-5 bg-slate-950/70 rounded-2xl border border-slate-800 my-2">
+              <div class="text-center w-2/5">
+                <div id="dash-home-logo" class="w-14 h-14 mx-auto bg-slate-800 rounded-full flex items-center justify-center font-black text-xl border border-slate-700 shadow text-brand-cyan">PEÑ</div>
+                <div id="dash-home-name" class="font-extrabold text-sm mt-2 truncate">Peñarol</div>
+                <div class="text-[10px] text-slate-400">Local</div>
+              </div>
+
+              <div class="text-xl font-black text-slate-600">VS</div>
+
+              <div class="text-center w-2/5">
+                <div id="dash-away-logo" class="w-14 h-14 mx-auto bg-slate-800 rounded-full flex items-center justify-center font-black text-xl border border-slate-700 shadow text-slate-200">NAC</div>
+                <div id="dash-away-name" class="font-extrabold text-sm mt-2 truncate">Nacional</div>
+                <div class="text-[10px] text-slate-400">Visitante</div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="switchTab('match')" class="w-full mt-3 py-3 bg-gradient-to-r from-brand-cyan to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-slate-950 font-black rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-play"></i> IR A CENTRO DE PARTIDO
+          </button>
+        </div>
+
+        <!-- BOARD CONFIDENCE & MEDIA FEED -->
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col justify-between">
+          <div>
+            <span class="text-xs uppercase tracking-wider text-slate-400 font-bold flex items-center gap-1.5 mb-3">
+              <i class="fa-solid fa-newspaper text-brand-gold"></i> Confianza Directiva & Prensa
+            </span>
+
+            <div class="space-y-4">
+              <div>
+                <div class="flex justify-between text-xs mb-1 font-semibold">
+                  <span class="text-slate-400">Confianza de la Directiva:</span>
+                  <span id="dash-manager-trust-txt" class="font-black text-emerald-400">85%</span>
+                </div>
+                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800">
+                  <div id="dash-manager-trust-bar" class="bg-gradient-to-r from-brand-cyan to-emerald-400 h-full transition-all duration-500" style="width: 85%;"></div>
+                </div>
+              </div>
+
+              <!-- Media News Item -->
+              <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] font-black uppercase text-amber-500 tracking-wider" id="news-source">TENFIELD / OVACIÓN</span>
+                  <span class="text-[10px] text-slate-500" id="news-time">Hace instantes</span>
+                </div>
+                <p id="news-headline" class="text-xs font-semibold leading-relaxed text-slate-200">"Expectativa total en el fútbol uruguayo por el inicio de la nueva temporada."</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-3 border-t border-slate-800 text-xs flex justify-between text-slate-400">
+            <span>Expectativa de la Temporada:</span>
+            <span id="dash-board-objective" class="text-slate-100 font-bold">Clasificar a Copa Libertadores</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- LEAGUE SUMMARY & CAREER STATS -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        
+        <!-- MINI LEAGUE STANDINGS -->
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="font-extrabold text-sm text-slate-200 flex items-center gap-2">
+              <i class="fa-solid fa-trophy text-brand-gold"></i> Tabla Torneo Apertura (Top 5)
+            </h3>
+            <button onclick="switchTab('table')" class="text-xs text-brand-cyan hover:underline font-bold">Ver Completa &rarr;</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left text-slate-300">
+              <thead class="text-[10px] uppercase bg-slate-950 text-slate-400">
+                <tr>
+                  <th class="p-2">Pos</th>
+                  <th class="p-2">Club</th>
+                  <th class="p-2 text-center">PJ</th>
+                  <th class="p-2 text-center">DG</th>
+                  <th class="p-2 text-center font-bold">PTS</th>
+                </tr>
+              </thead>
+              <tbody id="dash-mini-table-body" class="divide-y divide-slate-800/50">
+                <!-- Dynamic insertion -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- STATS OVERVIEW -->
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+          <h3 class="font-extrabold text-sm text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-chart-line text-brand-neon"></i> Rendimiento Individual
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div class="text-2xl font-black text-slate-100" id="dash-stat-pj">0</div>
+              <div class="text-[10px] text-slate-400 uppercase font-bold">Partidos</div>
+            </div>
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div class="text-2xl font-black text-brand-neon" id="dash-stat-goles">0</div>
+              <div class="text-[10px] text-slate-400 uppercase font-bold">Goles</div>
+            </div>
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div class="text-2xl font-black text-brand-cyan" id="dash-stat-asist">0</div>
+              <div class="text-[10px] text-slate-400 uppercase font-bold">Asistencias</div>
+            </div>
+            <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div class="text-2xl font-black text-amber-400" id="dash-stat-rating">0.0</div>
+              <div class="text-[10px] text-slate-400 uppercase font-bold">Promedio Val.</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
+            <i class="fa-solid fa-lightbulb text-brand-gold text-lg"></i>
+            <span>Gana Puntos de Habilidad (SP) en cada partido para mejorar tus atributos de tiro, ritmo y gambeta.</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- TAB 2: MATCH CENTER & INTERACTIVE DECISIONS -->
+    <div id="tab-match" class="tab-content hidden space-y-5">
+      
+      <!-- MATCH HUD -->
+      <div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+        <div class="flex items-center space-x-4">
+          <div class="text-center">
+            <span id="match-home-name" class="font-black text-sm sm:text-base block">PEÑAROL</span>
+            <span class="text-[10px] text-slate-400 uppercase">Local</span>
+          </div>
+          <div class="bg-slate-950 px-5 py-2 rounded-2xl border border-slate-800 text-3xl font-black text-brand-cyan tracking-wider" id="match-scoreboard">
+            0 - 0
+          </div>
+          <div class="text-center">
+            <span id="match-away-name" class="font-black text-sm sm:text-base block">NACIONAL</span>
+            <span class="text-[10px] text-slate-400 uppercase">Visitante</span>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-6">
+          <div class="text-center">
+            <div class="text-[10px] text-slate-400 uppercase font-bold">MINUTO</div>
+            <div id="match-timer" class="font-mono text-xl font-bold text-brand-gold">00:00</div>
+          </div>
+          <div class="text-center">
+            <div class="text-[10px] text-slate-400 uppercase font-bold">VALORACIÓN PRO</div>
+            <div id="match-player-rating" class="text-xl font-black text-emerald-400">6.5</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INTERACTIVE FIELD & MOMENTS PANEL -->
+      <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-2xl space-y-5">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+          <h3 class="font-extrabold text-base text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-gamepad text-brand-cyan"></i> Centro de Jugadas Claves
+          </h3>
+          <span id="match-status-badge" class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-800/50 px-3 py-1 rounded-full font-bold">En Progreso</span>
+        </div>
+
+        <!-- MOMENT ACTION CARD (DYNAMICALLY INJECTED) -->
+        <div id="match-interactive-panel" class="bg-slate-950 p-6 rounded-2xl border border-slate-800 text-center space-y-4">
+          <p class="text-slate-400 text-sm">Presiona "Avanzar Partido" para simular el transcurso del encuentro hasta que tengas una jugada clave.</p>
+          <div class="flex justify-center gap-3">
+            <button id="btn-next-play" onclick="triggerMatchMoment()" class="px-6 py-3 bg-gradient-to-r from-brand-cyan to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-slate-950 font-black rounded-xl text-xs sm:text-sm shadow-lg transition flex items-center gap-2">
+              <i class="fa-solid fa-forward-step"></i> AVANZAR A PRÓXIMA JUGADA
+            </button>
+            <button id="btn-sim-full" onclick="simulateFullMatch()" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs sm:text-sm transition">
+              <i class="fa-solid fa-bolt"></i> Simular Resto del Partido
+            </button>
+          </div>
+        </div>
+
+        <!-- COMMENTARY FEED -->
+        <div>
+          <h4 class="text-xs font-bold uppercase text-slate-400 tracking-wider mb-2 flex items-center gap-2">
+            <i class="fa-solid fa-microphone-lines text-brand-cyan"></i> Relato Tenfield en Vivo
+          </h4>
+          <div id="match-commentary-log" class="h-32 overflow-y-auto no-scrollbar space-y-2 text-xs text-slate-300 font-mono bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+            <p class="text-slate-500">// Comienza el partido en el Estadio. ¡Rueda la pelota!</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB 3: LEAGUE STANDINGS & FIXTURES -->
+    <div id="tab-table" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- FULL LEAGUE TABLE -->
+        <div class="lg:col-span-2 bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="font-extrabold text-base text-slate-100 flex items-center gap-2">
+              <i class="fa-solid fa-trophy text-brand-gold"></i> Tabla de Posiciones Uruguaya 2026
+            </h3>
+            <div class="flex space-x-1 text-xs">
+              <button onclick="switchTournament('apertura')" id="tourn-btn-apertura" class="px-3 py-1.5 rounded-lg bg-brand-cyan text-slate-950 font-bold">Apertura</button>
+              <button onclick="switchTournament('clausura')" id="tourn-btn-clausura" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 font-semibold hover:bg-slate-700">Clausura</button>
+              <button onclick="switchTournament('anual')" id="tourn-btn-anual" class="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 font-semibold hover:bg-slate-700">Tabla Anual</button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs text-left text-slate-200">
+              <thead class="text-[10px] uppercase bg-slate-950 text-slate-400">
+                <tr>
+                  <th class="p-2.5">#</th>
+                  <th class="p-2.5">Club</th>
+                  <th class="p-2.5 text-center">PJ</th>
+                  <th class="p-2.5 text-center">PG</th>
+                  <th class="p-2.5 text-center">PE</th>
+                  <th class="p-2.5 text-center">PP</th>
+                  <th class="p-2.5 text-center">GF</th>
+                  <th class="p-2.5 text-center">GC</th>
+                  <th class="p-2.5 text-center">DG</th>
+                  <th class="p-2.5 text-center font-bold">PTS</th>
+                </tr>
+              </thead>
+              <tbody id="full-league-table-body" class="divide-y divide-slate-800">
+                <!-- Dynamic insertion -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TOP SCORERS & ASSISTS -->
+        <div class="space-y-6">
+          <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+            <h4 class="font-extrabold text-sm text-slate-200 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-soccer-ball text-brand-neon"></i> Tabla de Goleadores
+            </h4>
+            <div id="top-scorers-list" class="space-y-2 text-xs">
+              <!-- Dynamic insertion -->
+            </div>
+          </div>
+
+          <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+            <h4 class="font-extrabold text-sm text-slate-200 mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-shoe-prints text-brand-cyan"></i> Tabla de Asistencias
+            </h4>
+            <div id="top-assists-list" class="space-y-2 text-xs">
+              <!-- Dynamic insertion -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 4: SKILL TREE / ATTRIBUTES -->
+    <div id="tab-skills" class="tab-content hidden space-y-6">
+      <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-xl font-black flex items-center gap-2">
+            <i class="fa-solid fa-bolt text-brand-gold"></i> Árbol de Habilidades FC 27
+          </h2>
+          <p class="text-xs text-slate-400">Gana Puntos de Habilidad (SP) en cada partido para mejorar los atributos de tu Pro.</p>
+        </div>
+        <div class="flex items-center space-x-3 bg-slate-950 px-4 py-2 rounded-xl border border-slate-800">
+          <span class="text-xs text-slate-400">Puntos Disponibles:</span>
+          <span id="skill-points-display" class="text-xl font-black text-brand-neon">3 SP</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- SHOOTING -->
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-sm text-brand-gold flex items-center gap-2">
+              <i class="fa-solid fa-crosshairs"></i> TIRO / POTENCIA
+            </h3>
+            <span id="attr-val-sho" class="font-black text-slate-100 text-sm">70</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div>
+                <div class="font-bold">Definición y Potencia</div>
+                <div class="text-[10px] text-slate-400">+Efectividad en tiros lejanos</div>
+              </div>
+              <button onclick="upgradeAttribute('shooting')" class="px-3 py-1.5 bg-brand-cyan hover:bg-cyan-400 text-slate-950 font-bold rounded-lg text-xs transition">
+                +2 (1 SP)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DRIBBLING -->
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-sm text-brand-cyan flex items-center gap-2">
+              <i class="fa-solid fa-person-running"></i> REGATE / GAMBETA
+            </h3>
+            <span id="attr-val-dri" class="font-black text-slate-100 text-sm">74</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div>
+                <div class="font-bold">Agilidad & Elástico</div>
+                <div class="text-[10px] text-slate-400">+Éxito en regates individuales</div>
+              </div>
+              <button onclick="upgradeAttribute('dribbling')" class="px-3 py-1.5 bg-brand-cyan hover:bg-cyan-400 text-slate-950 font-bold rounded-lg text-xs transition">
+                +2 (1 SP)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PACE -->
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-sm text-brand-neon flex items-center gap-2">
+              <i class="fa-solid fa-gauge-high"></i> RITMO / VELOCIDAD
+            </h3>
+            <span id="attr-val-pac" class="font-black text-slate-100 text-sm">75</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div>
+                <div class="font-bold">Aceleración Charrúa</div>
+                <div class="text-[10px] text-slate-400">+Pique y velocidad final</div>
+              </div>
+              <button onclick="upgradeAttribute('pace')" class="px-3 py-1.5 bg-brand-cyan hover:bg-cyan-400 text-slate-950 font-bold rounded-lg text-xs transition">
+                +2 (1 SP)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PASSING -->
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-sm text-emerald-400 flex items-center gap-2">
+              <i class="fa-solid fa-diagram-project"></i> PASE / VISIÓN
+            </h3>
+            <span id="attr-val-pas" class="font-black text-slate-100 text-sm">68</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div>
+                <div class="font-bold">Pase Filtrado</div>
+                <div class="text-[10px] text-slate-400">+Precisión en pases gol</div>
+              </div>
+              <button onclick="upgradeAttribute('passing')" class="px-3 py-1.5 bg-brand-cyan hover:bg-cyan-400 text-slate-950 font-bold rounded-lg text-xs transition">
+                +2 (1 SP)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DEFENDING -->
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-sm text-sky-400 flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved"></i> DEFENSA / BARRIDA
+            </h3>
+            <span id="attr-val-def" class="font-black text-slate-100 text-sm">45</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div>
+                <div class="font-bold">Quite Limpio</div>
+                <div class="text-[10px] text-slate-400">+Efectividad en quites defensivos</div>
+              </div>
+              <button onclick="upgradeAttribute('defending')" class="px-3 py-1.5 bg-brand-cyan hover:bg-cyan-400 text-slate-950 font-bold rounded-lg text-xs transition">
+                +2 (1 SP)
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PHYSICAL -->
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+            <h3 class="font-bold text-sm text-rose-400 flex items-center gap-2">
+              <i class="fa-solid fa-dumbbell"></i> FÍSICO / GARRA
+            </h3>
+            <span id="attr-val-phy" class="font-black text-slate-100 text-sm">72</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <div>
+                <div class="font-bold">Garra Charrúa</div>
+                <div class="text-[10px] text-slate-400">+Resistencia y choque cuerpo a cuerpo</div>
+              </div>
+              <button onclick="upgradeAttribute('physical')" class="px-3 py-1.5 bg-brand-cyan hover:bg-cyan-400 text-slate-950 font-bold rounded-lg text-xs transition">
+                +2 (1 SP)
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: TRANSFERS -->
+    <div id="tab-transfers" class="tab-content hidden space-y-6">
+      <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl flex justify-between items-center">
+        <div>
+          <h2 class="text-xl font-black flex items-center gap-2">
+            <i class="fa-solid fa-handshake text-emerald-400"></i> Mercado de Fichajes
+          </h2>
+          <p class="text-xs text-slate-400">Recibe ofertas de gigantes de Sudamérica o Europa según tus actuaciones.</p>
+        </div>
+        <div class="text-right">
+          <div class="text-xs text-slate-400">Valor de Mercado Pro:</div>
+          <div id="transfer-market-val" class="text-2xl font-black text-emerald-400">$1,200,000</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="transfer-offers-container">
+        <!-- Offers rendered dynamically -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: INITIAL PLAYER CREATION -->
+  <div id="init-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur flex items-center justify-center p-4">
+    <div class="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-brand-cyan/40 max-w-lg w-full shadow-2xl space-y-5">
+      <div class="text-center">
+        <div class="inline-block p-3 bg-brand-cyan/10 rounded-2xl text-brand-cyan mb-2">
+          <i class="fa-solid fa-futbol text-3xl"></i>
+        </div>
+        <h2 class="text-2xl font-black tracking-tight">Crea tu Leyenda FC 27</h2>
+        <p class="text-xs text-slate-400">Modo Carrera Profesional - Liga Uruguaya</p>
+      </div>
+
+      <form onsubmit="handleInitCareer(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block text-slate-300 font-bold mb-1">Nombre del Jugador</label>
+          <input type="text" id="input-player-name" required value="Enzo Pérez" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-brand-cyan">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Posición Principal</label>
+            <select id="input-player-pos" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-brand-cyan">
+              <option value="DC">Delantero Centro (DC)</option>
+              <option value="MCO">Enganche (MCO)</option>
+              <option value="EI">Extremo Izquierdo (EI)</option>
+              <option value="ED">Extremo Derecho (ED)</option>
+              <option value="MC">Mediocampista (MC)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-300 font-bold mb-1">Club Inicial</label>
+            <select id="input-player-club" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-slate-100 focus:outline-none focus:border-brand-cyan">
+              <option value="Peñarol">Peñarol</option>
+              <option value="Nacional">Nacional</option>
+              <option value="Defensor Sporting">Defensor Sporting</option>
+              <option value="Danubio">Danubio</option>
+              <option value="Liverpool">Liverpool</option>
+              <option value="Boston River">Boston River</option>
+              <option value="Montevideo Wanderers">Montevideo Wanderers</option>
+              <option value="Racing">Racing</option>
+              <option value="Progreso">Progreso</option>
+              <option value="Cerro">Cerro</option>
+              <option value="Fénix">Fénix</option>
+              <option value="River Plate">River Plate</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-brand-cyan to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-slate-950 font-black rounded-xl text-sm transition shadow-lg">
+          ¡COMENZAR CARRERA FC 27!
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT GAME LOGIC -->
+  <script>
+    /* ==========================================================================
+       URUGUAYAN TEAMS & CAREER STATE
+       ========================================================================== */
+    const URUGUAY_TEAMS = [
+      { name: 'Peñarol', rating: 78, budget: 6500000, logo: 'PEÑ' },
+      { name: 'Nacional', rating: 78, budget: 6200000, logo: 'NAC' },
+      { name: 'Defensor Sporting', rating: 74, budget: 2800000, logo: 'DEF' },
+      { name: 'Danubio', rating: 72, budget: 2200000, logo: 'DAN' },
+      { name: 'Liverpool', rating: 74, budget: 3000000, logo: 'LIV' },
+      { name: 'Boston River', rating: 71, budget: 1800000, logo: 'BOS' },
+      { name: 'Montevideo Wanderers', rating: 71, budget: 1700000, logo: 'WAN' },
+      { name: 'Racing', rating: 71, budget: 1500000, logo: 'RAC' },
+      { name: 'Progreso', rating: 70, budget: 1200000, logo: 'PRO' },
+      { name: 'Cerro', rating: 69, budget: 1100000, logo: 'CRR' },
+      { name: 'Fénix', rating: 68, budget: 1000000, logo: 'FEN' },
+      { name: 'River Plate', rating: 70, budget: 1400000, logo: 'RIV' },
+      { name: 'Cerro Largo', rating: 70, budget: 1200000, logo: 'CL' },
+      { name: 'Deportivo Maldonado', rating: 69, budget: 1100000, logo: 'DEP' },
+      { name: 'Miramar Misiones', rating: 67, budget: 900000, logo: 'MIR' },
+      { name: 'Rampla Juniors', rating: 68, budget: 950000, logo: 'RAM' }
+    ];
+
+    let careerState = {
+      player: {
+        name: 'Enzo Pérez',
+        position: 'DC',
+        club: 'Peñarol',
+        attributes: { pace: 75, shooting: 70, passing: 68, dribbling: 74, defending: 45, physical: 72 },
+        skillPoints: 3,
+        goals: 0,
+        assists: 0,
+        matchesPlayed: 0,
+        ratingSum: 0,
+        value: 1200000,
+        managerTrust: 85
+      },
+      season: 2026,
+      currentRound: 1,
+      table: [],
+      schedule: []
+    };
+
+    let matchState = {
+      active: false,
+      homeTeam: 'Peñarol',
+      awayTeam: 'Nacional',
+      homeScore: 0,
+      awayScore: 0,
+      minute: 0,
+      playerRating: 6.5
+    };
+
+    /* ==========================================================================
+       INITIALIZATION & SAVE SYSTEM
+       ========================================================================== */
+    function handleInitCareer(e) {
+      e.preventDefault();
+      careerState.player.name = document.getElementById('input-player-name').value;
+      careerState.player.position = document.getElementById('input-player-pos').value;
+      careerState.player.club = document.getElementById('input-player-club').value;
+
+      initTableAndSchedule();
+      saveCareerData();
+
+      document.getElementById('init-modal').classList.add('hidden');
+      updateHeaderUI();
+      renderDashboard();
+    }
+
+    function initTableAndSchedule() {
+      careerState.table = URUGUAY_TEAMS.map(t => ({
+        name: t.name,
+        pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0
+      }));
+
+      // Round-robin schedule generator
+      const teamNames = URUGUAY_TEAMS.map(t => t.name);
+      careerState.schedule = [];
+
+      for (let r = 1; r <= 15; r++) {
+        const roundFixtures = [];
+        for (let i = 0; i < 8; i++) {
+          const home = teamNames[i];
+          const away = teamNames[15 - i];
+          roundFixtures.push({ home, away, homeScore: null, awayScore: null });
+        }
+        careerState.schedule.push(roundFixtures);
+        teamNames.splice(1, 0, teamNames.pop());
+      }
+    }
+
+    function saveCareerData() {
+      localStorage.setItem('FC27_URUGUAY_PRO', JSON.stringify(careerState));
+    }
+
+    function loadCareerData() {
+      const saved = localStorage.getItem('FC27_URUGUAY_PRO');
+      if (saved) {
+        try {
+          careerState = JSON.parse(saved);
+          document.getElementById('init-modal').classList.add('hidden');
+          updateHeaderUI();
+          renderDashboard();
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        initTableAndSchedule();
+      }
+    }
+
+    function resetCareerConfirm() {
+      if (confirm('¿Estás seguro de reiniciar tu carrera? Perderás todo el progreso.')) {
+        localStorage.removeItem('FC27_URUGUAY_PRO');
+        location.reload();
+      }
+    }
+
+    /* ==========================================================================
+       UI UPDATES & RENDERERS
+       ========================================================================== */
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-brand-cyan', 'bg-slate-800', 'border', 'border-brand-cyan/30');
+        btn.classList.add('text-slate-400');
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+      if (activeBtn) {
+        activeBtn.classList.add('text-brand-cyan', 'bg-slate-800', 'border', 'border-brand-cyan/30');
+        activeBtn.classList.remove('text-slate-400');
+      }
+
+      if (tabId === 'table') renderFullTable();
+      if (tabId === 'skills') renderSkillsUI();
+      if (tabId === 'transfers') renderTransfers();
+      if (tabId === 'match' && !matchState.active) setupCurrentMatch();
+    }
+
+    function updateHeaderUI() {
+      const p = careerState.player;
+      document.getElementById('hdr-player-name').innerText = p.name;
+      document.getElementById('hdr-player-pos').innerText = p.position;
+      document.getElementById('hdr-club-name').innerText = p.club;
+      document.getElementById('hdr-goals').innerText = p.goals;
+      document.getElementById('hdr-assists').innerText = p.assists;
+
+      const ovr = Math.round((p.attributes.pace + p.attributes.shooting + p.attributes.dribbling + p.attributes.passing + p.attributes.defending + p.attributes.physical) / 6);
+      document.getElementById('hdr-ovr').innerText = ovr;
+      document.getElementById('hdr-value').innerText = `$${(p.value / 1000000).toFixed(1)}M`;
+
+      const clubObj = URUGUAY_TEAMS.find(t => t.name === p.club) || URUGUAY_TEAMS[0];
+      document.getElementById('hdr-budget').innerText = `$${(clubObj.budget / 1000000).toFixed(1)}M`;
+      document.getElementById('hdr-date').innerText = `Fecha ${careerState.currentRound} - Apertura`;
+    }
+
+    function renderDashboard() {
+      const p = careerState.player;
+      const ovr = Math.round((p.attributes.pace + p.attributes.shooting + p.attributes.dribbling + p.attributes.passing + p.attributes.defending + p.attributes.physical) / 6);
+
+      document.getElementById('dash-player-name').innerText = p.name;
+      document.getElementById('dash-player-club').innerText = p.club;
+      document.getElementById('dash-player-ovr').innerText = ovr;
+      document.getElementById('dash-player-pos').innerText = p.position;
+
+      document.getElementById('stat-pac').innerText = p.attributes.pace;
+      document.getElementById('stat-sho').innerText = p.attributes.shooting;
+      document.getElementById('stat-pas').innerText = p.attributes.passing;
+      document.getElementById('stat-dri').innerText = p.attributes.dribbling;
+      document.getElementById('stat-def').innerText = p.attributes.defending;
+      document.getElementById('stat-phy').innerText = p.attributes.physical;
+
+      document.getElementById('dash-skill-points').innerText = `${p.skillPoints} SP`;
+
+      document.getElementById('dash-stat-pj').innerText = p.matchesPlayed;
+      document.getElementById('dash-stat-goles').innerText = p.goals;
+      document.getElementById('dash-stat-asist').innerText = p.assists;
+      const avgRating = p.matchesPlayed > 0 ? (p.ratingSum / p.matchesPlayed).toFixed(1) : '0.0';
+      document.getElementById('dash-stat-rating').innerText = avgRating;
+
+      // Next match info
+      const currentRoundFixtures = careerState.schedule[careerState.currentRound - 1] || [];
+      const userMatch = currentRoundFixtures.find(f => f.home === p.club || f.away === p.club) || { home: p.club, away: 'Nacional' };
+
+      document.getElementById('dash-home-name').innerText = userMatch.home;
+      document.getElementById('dash-away-name').innerText = userMatch.away;
+      document.getElementById('dash-home-logo').innerText = userMatch.home.substring(0, 3).toUpperCase();
+      document.getElementById('dash-away-logo').innerText = userMatch.away.substring(0, 3).toUpperCase();
+
+      renderMiniTable();
+    }
+
+    function renderMiniTable() {
+      const tbody = document.getElementById('dash-mini-table-body');
+      tbody.innerHTML = '';
+
+      careerState.table.slice(0, 5).forEach((t, i) => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-slate-800/50 hover:bg-slate-800/30';
+        tr.innerHTML = `
+          <td class="p-2 font-bold text-slate-400">${i + 1}</td>
+          <td class="p-2 font-semibold ${t.name === careerState.player.club ? 'text-brand-cyan' : 'text-slate-200'}">${t.name}</td>
+          <td class="p-2 text-center">${t.pj}</td>
+          <td class="p-2 text-center">${t.dg}</td>
+          <td class="p-2 text-center font-bold text-brand-gold">${t.pts}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderFullTable() {
+      const tbody = document.getElementById('full-league-table-body');
+      tbody.innerHTML = '';
+
+      careerState.table.forEach((t, i) => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/40';
+        tr.innerHTML = `
+          <td class="p-2.5 font-bold text-slate-400">${i + 1}</td>
+          <td class="p-2.5 font-bold ${t.name === careerState.player.club ? 'text-brand-cyan' : 'text-slate-100'}">${t.name}</td>
+          <td class="p-2.5 text-center">${t.pj}</td>
+          <td class="p-2.5 text-center">${t.pg}</td>
+          <td class="p-2.5 text-center">${t.pe}</td>
+          <td class="p-2.5 text-center">${t.pp}</td>
+          <td class="p-2.5 text-center">${t.gf}</td>
+          <td class="p-2.5 text-center">${t.gc}</td>
+          <td class="p-2.5 text-center">${t.dg}</td>
+          <td class="p-2.5 text-center font-black text-brand-gold">${t.pts}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderSkillsUI() {
+      document.getElementById('skill-points-display').innerText = `${careerState.player.skillPoints} SP`;
+      document.getElementById('attr-val-sho').innerText = careerState.player.attributes.shooting;
+      document.getElementById('attr-val-dri').innerText = careerState.player.attributes.dribbling;
+      document.getElementById('attr-val-pac').innerText = careerState.player.attributes.pace;
+      document.getElementById('attr-val-pas').innerText = careerState.player.attributes.passing;
+      document.getElementById('attr-val-def').innerText = careerState.player.attributes.defending;
+      document.getElementById('attr-val-phy').innerText = careerState.player.attributes.physical;
+    }
+
+    function upgradeAttribute(attrKey) {
+      if (careerState.player.skillPoints < 1) {
+        alert('No tienes Puntos de Habilidad (SP) disponibles. Juega partidos para obtener más.');
+        return;
+      }
+      careerState.player.skillPoints--;
+      careerState.player.attributes[attrKey] += 2;
+      careerState.player.value += 150000;
+
+      saveCareerData();
+      updateHeaderUI();
+      renderDashboard();
+      renderSkillsUI();
+    }
+
+    function renderTransfers() {
+      document.getElementById('transfer-market-val').innerText = `$${(careerState.player.value / 1000000).toFixed(2)}M`;
+      const container = document.getElementById('transfer-offers-container');
+      container.innerHTML = `
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-3 shadow-xl">
+          <div class="flex justify-between items-center">
+            <span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold px-2.5 py-0.5 rounded-full">Oferta Confirmada</span>
+            <span class="text-xs text-slate-400">Boca Juniors (Argentina)</span>
+          </div>
+          <h3 class="font-extrabold text-base text-slate-100">Boca Juniors busca la Garra Charrúa</h3>
+          <p class="text-xs text-slate-400">Te ofrecen un contrato estelar con salario elevado para disputar la Copa Libertadores.</p>
+          <div class="flex justify-between items-center pt-2 border-t border-slate-800">
+            <span class="text-sm font-bold text-emerald-400">$2,800,000 USD</span>
+            <button onclick="acceptTransfer('Boca Juniors')" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition">Aceptar Traspaso</button>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-3 shadow-xl">
+          <div class="flex justify-between items-center">
+            <span class="text-xs bg-cyan-950 text-brand-cyan border border-brand-cyan/30 font-bold px-2.5 py-0.5 rounded-full">Interés Europeo</span>
+            <span class="text-xs text-slate-400">SL Benfica (Portugal)</span>
+          </div>
+          <h3 class="font-extrabold text-base text-slate-100">Ojo de los ojeadores del Benfica</h3>
+          <p class="text-xs text-slate-400">Siguen de cerca tu progresión en la Liga Uruguaya antes de enviar una propuesta formal.</p>
+          <div class="flex justify-between items-center pt-2 border-t border-slate-800">
+            <span class="text-sm font-bold text-brand-cyan">$4,500,000 USD</span>
+            <button disabled class="px-4 py-2 bg-slate-800 text-slate-500 font-bold rounded-xl text-xs cursor-not-allowed">Seguimiento</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function acceptTransfer(newClub) {
+      careerState.player.club = newClub;
+      saveCareerData();
+      updateHeaderUI();
+      renderDashboard();
+      alert(`¡Traspaso confirmado! Ahora eres jugador de ${newClub}.`);
+    }
+
+    /* ==========================================================================
+       MATCH ENGINE & INTERACTIVE MOMENTS
+       ========================================================================== */
+    function setupCurrentMatch() {
+      const currentRoundFixtures = careerState.schedule[careerState.currentRound - 1] || [];
+      const userMatch = currentRoundFixtures.find(f => f.home === careerState.player.club || f.away === careerState.player.club) || { home: careerState.player.club, away: 'Nacional' };
+
+      matchState.homeTeam = userMatch.home;
+      matchState.awayTeam = userMatch.away;
+      matchState.homeScore = 0;
+      matchState.awayScore = 0;
+      matchState.minute = 0;
+      matchState.playerRating = 6.5;
+      matchState.active = true;
+
+      document.getElementById('match-home-name').innerText = matchState.homeTeam.toUpperCase();
+      document.getElementById('match-away-name').innerText = matchState.awayTeam.toUpperCase();
+      document.getElementById('match-scoreboard').innerText = '0 - 0';
+      document.getElementById('match-timer').innerText = '00:00';
+      document.getElementById('match-status-badge').className = 'text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 px-3 py-1 rounded-full font-bold';
+      document.getElementById('match-status-badge').innerText = 'En Progreso';
+
+      document.getElementById('match-commentary-log').innerHTML = '<p class="text-slate-500">// Pita el árbitro. ¡Comienza el partido!</p>';
+    }
+
+    function triggerMatchMoment() {
+      if (!matchState.active) return;
+
+      matchState.minute += Math.floor(Math.random() * 15) + 8;
+      if (matchState.minute >= 90) {
+        finishMatch();
+        return;
+      }
+
+      document.getElementById('match-timer').innerText = `${matchState.minute.toString().padStart(2, '0')}:00`;
+
+      // Present a tactical choice card
+      const panel = document.getElementById('match-interactive-panel');
+      const rnd = Math.random();
+
+      if (rnd < 0.35) {
+        // SHOOTING MOMENT
+        panel.innerHTML = `
+          <div class="space-y-3">
+            <span class="text-xs bg-amber-950 text-brand-gold border border-amber-800/50 font-bold px-3 py-1 rounded-full">¡OCASIÓN DE GOL!</span>
+            <h4 class="font-extrabold text-base text-slate-100">Te llega la pelota limpia al borde del área</h4>
+            <p class="text-xs text-slate-400">¿Cómo decides definir de cara al arco?</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <button onclick="resolveMatchAction('SHOOT_POWER')" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-200">
+                <i class="fa-solid fa-bolt text-brand-gold block text-lg mb-1"></i> Bombazo con Potencia
+              </button>
+              <button onclick="resolveMatchAction('SHOOT_FINESSE')" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-200">
+                <i class="fa-solid fa-bullseye text-brand-cyan block text-lg mb-1"></i> Tiro Colocado
+              </button>
+              <button onclick="resolveMatchAction('SHOOT_CHIP')" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-200">
+                <i class="fa-solid fa-angles-up text-brand-neon block text-lg mb-1"></i> Vaselina / Sombrerito
+              </button>
+            </div>
+          </div>
+        `;
+      } else if (rnd < 0.7) {
+        // DRIBBLE / SKILL MOMENT
+        panel.innerHTML = `
+          <div class="space-y-3">
+            <span class="text-xs bg-cyan-950 text-brand-cyan border border-brand-cyan/30 font-bold px-3 py-1 rounded-full">¡DUELO INDIVIDUAL!</span>
+            <h4 class="font-extrabold text-base text-slate-100">Te encara el zaguero rival en el mano a mano</h4>
+            <p class="text-xs text-slate-400">¿Qué regate vas a ejecutar para desbordar?</p>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              <button onclick="resolveMatchAction('SKILL_ELASTICO')" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-200">
+                <i class="fa-solid fa-wand-magic-sparkles text-brand-cyan block text-lg mb-1"></i> Elástico Charrúa
+              </button>
+              <button onclick="resolveMatchAction('SKILL_ROULETTE')" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-200">
+                <i class="fa-solid fa-rotate-right text-emerald-400 block text-lg mb-1"></i> Ruleta Marsellesa
+              </button>
+              <button onclick="resolveMatchAction('SKILL_FEINT')" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-200">
+                <i class="fa-solid fa-person-running text-brand-gold block text-lg mb-1"></i> Amague y Pique
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        // PLAYMAKING / PASS MOMENT
+        panel.innerHTML = `
+          <div class="space-y-3">
+            <span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold px-3 py-1 rounded-full">¡CONSTRUCCIÓN DE JUEGO!</span>
+            <h4 class="font-extrabold text-base text-slate-100">Ves el desmarque de tu compañero al espacio</h4>
+            <p class="text-xs text-slate-400">¿Qué tipo de pase vas a filtrar?</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <button onclick="resolveMatchAction('PASS_THROUGH')" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-200">
+                <i class="fa-solid fa-arrow-trend-up text-emerald-400 block text-lg mb-1"></i> Pase Filtrado al Ras
+              </button>
+              <button onclick="resolveMatchAction('PASS_LOB')" class="p-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold text-slate-200">
+                <i class="fa-solid fa-parachute-box text-brand-gold block text-lg mb-1"></i> Centro Aéreo
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function resolveMatchAction(actionType) {
+      const pAttrs = careerState.player.attributes;
+      let successChance = 0.5;
+
+      if (actionType.startsWith('SHOOT')) successChance = (pAttrs.shooting / 100) + 0.1;
+      if (actionType.startsWith('SKILL')) successChance = (pAttrs.dribbling / 100) + 0.1;
+      if (actionType.startsWith('PASS')) successChance = (pAttrs.passing / 100) + 0.15;
+
+      const isSuccess = Math.random() < successChance;
+
+      if (isSuccess) {
+        if (actionType.startsWith('SHOOT')) {
+          logMatchCommentary('¡GOLAZO! Remate formidable inalcanzable para el golero.');
+          addMatchGoal(careerState.player.club, true);
+          matchState.playerRating = Math.min(10.0, matchState.playerRating + 1.2);
+        } else if (actionType.startsWith('SKILL')) {
+          logMatchCommentary('¡GAMBETA ESPECTACULAR! Deja desparramado al defensor rival.');
+          matchState.playerRating = Math.min(10.0, matchState.playerRating + 0.7);
+        } else {
+          logMatchCommentary('¡PASE DE GOL! Habilitación milimétrica que termina en gol de tu equipo.');
+          addMatchGoal(careerState.player.club, false, true);
+          matchState.playerRating = Math.min(10.0, matchState.playerRating + 0.9);
+        }
+      } else {
+        logMatchCommentary('La jugada no prospera y la defensa rival intercepta la pelota.');
+        matchState.playerRating = Math.max(4.0, matchState.playerRating - 0.2);
+      }
+
+      document.getElementById('match-player-rating').innerText = matchState.playerRating.toFixed(1);
+
+      // Reset action panel
+      document.getElementById('match-interactive-panel').innerHTML = `
+        <p class="text-slate-400 text-sm">Sigue avanzando para buscar otra oportunidad.</p>
+        <div class="flex justify-center gap-3">
+          <button id="btn-next-play" onclick="triggerMatchMoment()" class="px-6 py-3 bg-gradient-to-r from-brand-cyan to-emerald-400 hover:from-cyan-400 hover:to-emerald-300 text-slate-950 font-black rounded-xl text-xs sm:text-sm shadow-lg transition flex items-center gap-2">
+            <i class="fa-solid fa-forward-step"></i> AVANZAR A PRÓXIMA JUGADA
+          </button>
+          <button id="btn-sim-full" onclick="simulateFullMatch()" class="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs sm:text-sm transition">
+            <i class="fa-solid fa-bolt"></i> Simular Resto del Partido
+          </button>
+        </div>
+      `;
+    }
+
+    function addMatchGoal(team, isPlayerGoal = false, isAssist = false) {
+      if (team === matchState.homeTeam) matchState.homeScore++;
+      else matchState.awayScore++;
+
+      document.getElementById('match-scoreboard').innerText = `${matchState.homeScore} - ${matchState.awayScore}`;
+
+      if (isPlayerGoal) careerState.player.goals++;
+      if (isAssist) careerState.player.assists++;
+      updateHeaderUI();
+    }
+
+    function logMatchCommentary(msg) {
+      const log = document.getElementById('match-commentary-log');
+      const p = document.createElement('p');
+      p.innerHTML = `<span class="text-brand-cyan font-bold">[${matchState.minute}']</span> ${msg}`;
+      log.prepend(p);
+    }
+
+    function simulateFullMatch() {
+      if (!matchState.active) return;
+      matchState.minute = 90;
+      document.getElementById('match-timer').innerText = '90:00';
+
+      if (Math.random() > 0.5) matchState.homeScore++;
+      if (Math.random() > 0.6) matchState.awayScore++;
+
+      document.getElementById('match-scoreboard').innerText = `${matchState.homeScore} - ${matchState.awayScore}`;
+      finishMatch();
+    }
+
+    function finishMatch() {
+      matchState.active = false;
+      document.getElementById('match-status-badge').className = 'text-xs bg-slate-800 text-slate-400 border border-slate-700 px-3 py-1 rounded-full font-bold';
+      document.getElementById('match-status-badge').innerText = 'Finalizado';
+
+      logMatchCommentary(`¡FINAL! ${matchState.homeTeam} ${matchState.homeScore} - ${matchState.awayScore} ${matchState.awayTeam}`);
+
+      careerState.player.matchesPlayed++;
+      careerState.player.ratingSum += matchState.playerRating;
+      careerState.player.skillPoints += 1;
+
+      // Simulate full league round fixtures
+      simulateRoundResults();
+      careerState.currentRound++;
+
+      saveCareerData();
+      updateHeaderUI();
+      renderDashboard();
+
+      document.getElementById('match-interactive-panel').innerHTML = `
+        <div class="space-y-3 py-2">
+          <h4 class="font-extrabold text-lg text-emerald-400">Partido Concluido</h4>
+          <p class="text-xs text-slate-300">Valoración final del Pro: <strong class="text-brand-gold text-sm">${matchState.playerRating.toFixed(1)}</strong> | Recompensa: <strong class="text-brand-neon">+1 SP</strong></p>
+          <button onclick="switchTab('dashboard')" class="px-6 py-2.5 bg-brand-cyan hover:bg-cyan-400 text-slate-950 font-black rounded-xl text-xs transition">
+            Volver al Dashboard
+          </button>
+        </div>
+      `;
+    }
+
+    function simulateRoundResults() {
+      const roundIdx = careerState.currentRound - 1;
+      const currentFixtures = careerState.schedule[roundIdx] || [];
+
+      currentFixtures.forEach(fix => {
+        if (fix.home === careerState.player.club || fix.away === careerState.player.club) {
+          fix.homeScore = matchState.homeScore;
+          fix.awayScore = matchState.awayScore;
+        } else {
+          fix.homeScore = Math.floor(Math.random() * 3);
+          fix.awayScore = Math.floor(Math.random() * 3);
+        }
+
+        // Update table statistics
+        const homeTeamObj = careerState.table.find(t => t.name === fix.home);
+        const awayTeamObj = careerState.table.find(t => t.name === fix.away);
+
+        if (homeTeamObj && awayTeamObj) {
+          homeTeamObj.pj++; awayTeamObj.pj++;
+          homeTeamObj.gf += fix.homeScore; homeTeamObj.gc += fix.awayScore;
+          awayTeamObj.gf += fix.awayScore; awayTeamObj.gc += fix.homeScore;
+
+          homeTeamObj.dg = homeTeamObj.gf - homeTeamObj.gc;
+          awayTeamObj.dg = awayTeamObj.gf - awayTeamObj.gc;
+
+          if (fix.homeScore > fix.awayScore) { homeTeamObj.pg++; homeTeamObj.pts += 3; awayTeamObj.pp++; }
+          else if (fix.homeScore === fix.awayScore) { homeTeamObj.pe++; homeTeamObj.pts += 1; awayTeamObj.pe++; awayTeamObj.pts += 1; }
+          else { awayTeamObj.pg++; awayTeamObj.pts += 3; homeTeamObj.pp++; }
+        }
+      });
+
+      // Sort standings by PTS, then DG
+      careerState.table.sort((a, b) => b.pts - a.pts || b.dg - a.dg);
+    }
+
+    window.onload = function() {
+      loadCareerData();
+    };
+  </script>
+</body>
+</html>
